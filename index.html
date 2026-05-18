@@ -2005,6 +2005,26 @@
         @media (max-width: 768px) {
             .announcement-bar { font-size: 0.72em; padding: 8px 40px 8px 16px; text-align: left; }
         }
+    
+        /* LOGO MOBILE FIX */
+        @media (max-width: 768px) {
+            .logo-icon {
+                width: 44px !important;
+                height: 44px !important;
+                min-width: 44px !important;
+                display: flex !important;
+                flex-shrink: 0 !important;
+                overflow: hidden !important;
+            }
+            .logo-icon img {
+                width: 44px !important;
+                height: 44px !important;
+                display: block !important;
+                object-fit: cover !important;
+            }
+            .logo-nav { flex-shrink: 0 !important; }
+            .logo-text { display: none !important; }
+        }
     </style>
     <script>
     // ============================================================

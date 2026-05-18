@@ -335,12 +335,7 @@
         <i class="fas fa-exclamation-triangle"></i>
         <p><strong>Anda tidak menggunakan Pi Browser.</strong> Untuk melakukan pembayaran Pi, buka halaman ini melalui Pi Browser di perangkat Anda. Fitur informasi dan preview tetap tersedia.</p>
     </div>
-
-
-    <!-- DEBUG PANEL — tampil di layar HP, hapus setelah beres -->
-    <div id="debug-panel" style="display:none;background:#0a1220;border:1px solid rgba(124,58,237,0.4);border-radius:14px;padding:16px 18px;margin-bottom:20px;font-family:monospace;">
-        <div style="color:#a78bfa;font-size:0.78em;font-weight:700;margin-bottom:10px;">🔧 DEBUG PI SDK</div>
-        <div id="dbg-content" style="font-size:0.72em;line-height:1.9;color:rgba(255,255,255,0.7);"></div>
+    <div id="dbg-content" style="font-size:0.72em;line-height:1.9;color:rgba(255,255,255,0.7);"></div>
         <button onclick="document.getElementById('debug-panel').style.display='none'" style="margin-top:12px;background:rgba(255,255,255,0.07);border:none;color:rgba(255,255,255,0.5);padding:6px 14px;border-radius:6px;font-size:0.72em;cursor:pointer;">Tutup Debug</button>
     </div>
     <!-- AUTH CARD — tampil jika belum login Pi -->
@@ -557,15 +552,7 @@ let _type     = null;
 //  DEBUG HELPER — tampil di layar HP
 // ─────────────────────────────────────────────────────────
 function dbg(msg, color) {
-    var panel = document.getElementById('debug-panel');
-    var box   = document.getElementById('dbg-content');
-    if (!panel || !box) return;
-    panel.style.display = 'block';
-    var line = document.createElement('div');
-    line.style.color = color || 'rgba(255,255,255,0.75)';
-    line.textContent = new Date().toLocaleTimeString('id') + '  ' + msg;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
+    // debug disabled (production mainnet)
 }
 
 // ─────────────────────────────────────────────────────────
