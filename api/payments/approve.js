@@ -3,19 +3,13 @@
  *  api/payments/approve.js
  *  Vercel Serverless Function — Pi Network Approve Payment
  *  URL: /api/payments/approve
+ *  Menggunakan native fetch (Node 18+) — tidak perlu axios
  * ============================================================
  */
 
-const axios = require("axios");
-
-// ── Konfigurasi Pi Network ────────────────────────────────
-// Simpan di Vercel Dashboard → Project → Settings → Environment Variables
-// PI_SERVER_API_KEY = key dari Pi Developer Portal
-// PI_APP_ID         = App ID dari Pi Developer Portal
 const PI_API_KEY  = process.env.PI_SERVER_API_KEY;
 const PI_API_BASE = "https://api.minepi.com";
 
-// ── CORS: izinkan kedua domain Vercel ────────────────────
 const ALLOWED_ORIGINS = [
     "https://sagatama-mart.vercel.app",
     "https://hidayatulamin.vercel.app",
@@ -32,18 +26,50 @@ function setCors(req, res) {
     res.setHeader("Vary", "Origin");
 }
 
-// ── Handler utama ─────────────────────────────────────────
+async function piGet(path) {
+    const res = await fetch(`${PI_API_BASE}${path}`, {
+        method: "GET",
+        headers: {
+            "Authorization": `Key ${PI_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        signal: AbortSignal.timeout(10000)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(data?.error_message || data?.message || `HTTP ${res.status}`);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
+async function piPost(path, body = {}) {
+    const res = await fetch(`${PI_API_BASE}${path}`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Key ${PI_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10000)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(data?.error_message || data?.message || `HTTP ${res.status}`);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
 export default async function handler(req, res) {
     setCors(req, res);
 
-    // Handle preflight OPTIONS
-    if (req.method === "OPTIONS") {
-        return res.status(204).end();
-    }
-
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method not allowed" });
-    }
+    if (req.method === "OPTIONS") return res.status(204).end();
+    if (req.method !== "POST")   return res.status(405).json({ error: "Method not allowed" });
 
     const { paymentId, metadata } = req.body;
 
@@ -58,19 +84,9 @@ export default async function handler(req, res) {
 
     try {
         // 1. Ambil detail payment dari Pi API untuk verifikasi
-        const piRes = await axios.get(
-            `${PI_API_BASE}/v2/payments/${paymentId}`,
-            {
-                headers: {
-                    "Authorization": `Key ${PI_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 10000
-            }
-        );
-        const piPayment = piRes.data;
+        const piPayment = await piGet(`/v2/payments/${paymentId}`);
 
-        // 2. Cek sudah di-approve sebelumnya
+        // 2. Cek sudah di-approve sebelumnya (idempotent)
         if (piPayment.status?.developer_approved) {
             console.log(`[Pi] Payment ${paymentId} sudah di-approve sebelumnya`);
             return res.status(200).json({ success: true, message: "Sudah di-approve sebelumnya" });
@@ -82,17 +98,7 @@ export default async function handler(req, res) {
         }
 
         // 4. Approve di Pi API
-        await axios.post(
-            `${PI_API_BASE}/v2/payments/${paymentId}/approve`,
-            {},
-            {
-                headers: {
-                    "Authorization": `Key ${PI_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 10000
-            }
-        );
+        await piPost(`/v2/payments/${paymentId}/approve`);
 
         console.log(`[Pi] Payment ${paymentId} approved. Amount: ${piPayment.amount} Pi`);
 
@@ -104,8 +110,8 @@ export default async function handler(req, res) {
         });
 
     } catch (err) {
-        const msg = err.response?.data?.error_message || err.message || "Unknown error";
-        const status = err.response?.status || 500;
+        const msg    = err.message || "Unknown error";
+        const status = err.status  || 500;
         console.error(`[Pi] Approve error for ${paymentId}:`, msg);
         return res.status(status >= 400 && status < 600 ? status : 500).json({ error: msg });
     }

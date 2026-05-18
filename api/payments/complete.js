@@ -3,10 +3,9 @@
  *  api/payments/complete.js
  *  Vercel Serverless Function — Pi Network Complete Payment
  *  URL: /api/payments/complete
+ *  Menggunakan native fetch (Node 18+) — tidak perlu axios
  * ============================================================
  */
-
-const axios = require("axios");
 
 const PI_API_KEY  = process.env.PI_SERVER_API_KEY;
 const PI_API_BASE = "https://api.minepi.com";
@@ -27,6 +26,45 @@ function setCors(req, res) {
     res.setHeader("Vary", "Origin");
 }
 
+async function piGet(path) {
+    const res = await fetch(`${PI_API_BASE}${path}`, {
+        method: "GET",
+        headers: {
+            "Authorization": `Key ${PI_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        signal: AbortSignal.timeout(10000)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(data?.error_message || data?.message || `HTTP ${res.status}`);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
+async function piPost(path, body = {}) {
+    const res = await fetch(`${PI_API_BASE}${path}`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Key ${PI_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10000)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(data?.error_message || data?.message || `HTTP ${res.status}`);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
 export default async function handler(req, res) {
     setCors(req, res);
 
@@ -45,19 +83,9 @@ export default async function handler(req, res) {
 
     try {
         // 1. Verifikasi payment dari Pi API
-        const piRes = await axios.get(
-            `${PI_API_BASE}/v2/payments/${paymentId}`,
-            {
-                headers: {
-                    "Authorization": `Key ${PI_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 10000
-            }
-        );
-        const piPayment = piRes.data;
+        const piPayment = await piGet(`/v2/payments/${paymentId}`);
 
-        // 2. Cek sudah di-complete sebelumnya
+        // 2. Cek sudah di-complete sebelumnya (idempotent)
         if (piPayment.status?.developer_completed) {
             console.log(`[Pi] Payment ${paymentId} sudah di-complete sebelumnya`);
             return res.status(200).json({ success: true, message: "Sudah di-complete sebelumnya" });
@@ -69,17 +97,7 @@ export default async function handler(req, res) {
         }
 
         // 4. Complete di Pi API
-        await axios.post(
-            `${PI_API_BASE}/v2/payments/${paymentId}/complete`,
-            { txid },
-            {
-                headers: {
-                    "Authorization": `Key ${PI_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 10000
-            }
-        );
+        await piPost(`/v2/payments/${paymentId}/complete`, { txid });
 
         console.log(`[Pi] Payment ${paymentId} completed. txid: ${txid}`);
 
@@ -93,8 +111,8 @@ export default async function handler(req, res) {
         });
 
     } catch (err) {
-        const msg = err.response?.data?.error_message || err.message || "Unknown error";
-        const status = err.response?.status || 500;
+        const msg    = err.message || "Unknown error";
+        const status = err.status  || 500;
         console.error(`[Pi] Complete error for ${paymentId}:`, msg);
         return res.status(status >= 400 && status < 600 ? status : 500).json({ error: msg });
     }

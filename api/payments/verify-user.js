@@ -3,10 +3,9 @@
  *  api/payments/verify-user.js
  *  Vercel Serverless Function — Verifikasi User Pi Network
  *  URL: /api/payments/verify-user
+ *  Menggunakan native fetch (Node 18+) — tidak perlu axios
  * ============================================================
  */
-
-const axios = require("axios");
 
 const PI_API_BASE = "https://api.minepi.com";
 
@@ -40,17 +39,22 @@ export default async function handler(req, res) {
 
     try {
         // Verifikasi access token ke Pi API
-        const piRes = await axios.get(
-            `${PI_API_BASE}/v2/me`,
-            {
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type":  "application/json"
-                },
-                timeout: 8000
-            }
-        );
-        const piUser = piRes.data;
+        const piRes = await fetch(`${PI_API_BASE}/v2/me`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type":  "application/json"
+            },
+            signal: AbortSignal.timeout(8000)
+        });
+
+        const piUser = await piRes.json().catch(() => ({}));
+
+        if (!piRes.ok) {
+            const msg = piUser?.message || piUser?.error || `HTTP ${piRes.status}`;
+            console.error("[Pi] verifyUser error:", msg);
+            return res.status(401).json({ error: msg });
+        }
 
         console.log(`[Pi] User verified: @${piUser.username}`);
 
@@ -62,8 +66,8 @@ export default async function handler(req, res) {
         });
 
     } catch (err) {
-        const msg = err.response?.data?.message || err.message || "Verifikasi gagal";
-        console.error("[Pi] verifyUser error:", msg);
-        return res.status(401).json({ error: msg });
+        const msg = err.message || "Verifikasi gagal";
+        console.error("[Pi] verifyUser fetch error:", msg);
+        return res.status(500).json({ error: msg });
     }
 }
