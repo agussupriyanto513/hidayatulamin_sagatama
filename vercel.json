@@ -1,11 +1,20 @@
 {
   "version": 2,
   "outputDirectory": ".",
+  "headers": [
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/api/payments/approve",      "destination": "/api/payments/approve.js" },
-    { "source": "/api/payments/complete",     "destination": "/api/payments/complete.js" },
-    { "source": "/api/payments/incomplete",   "destination": "/api/payments/incomplete.js" },
-    { "source": "/api/payments/verify-user",  "destination": "/api/payments/verify-user.js" }
+    { "source": "/api/payments/approve",     "destination": "/api/payments/approve.js" },
+    { "source": "/api/payments/complete",    "destination": "/api/payments/complete.js" },
+    { "source": "/api/payments/incomplete",  "destination": "/api/payments/incomplete.js" },
+    { "source": "/api/payments/verify-user", "destination": "/api/payments/verify-user.js" }
   ],
   "redirects": [
     { "source": "/", "destination": "/pi-payment-testnet.html", "permanent": false }
