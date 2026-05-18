@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Payment TESTNET — Sagatama</title>
+    <meta name="description" content="Bayar dengan Pi Network untuk produk, donasi, dan layanan Yayasan Hidayatul Amin Sagatama.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c3aed'/><text y='.85em' font-size='75' x='50%' text-anchor='middle' fill='white' font-family='serif'>π</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- Pi Network SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+        // Tandai false dulu — init yang sebenarnya di DOMContentLoaded
+        window._piSdkLoaded = false;
+        window._piInitOk    = false;
+        window._piInitErr   = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Pi !== 'undefined') {
+                window._piSdkLoaded = true;
+                try {
+                    Pi.init({ version: "2.0", sandbox: true });
+                    window._piInitOk = true;
+                    console.log('[Pi SDK] Init OK — TESTNET/SANDBOX');
+                } catch(e) {
+                    window._piInitErr = e.message;
+                    console.warn('[Pi SDK init]', e.message);
+                }
+            } else {
+                console.warn('[Pi SDK] window.Pi tidak ditemukan — bukan Pi Browser');
+            }
+            // Panggil init UI setelah SDK siap
+            _initPiUI();
+        });
+    </script>
+
+    <style>
+        :root {
+            --dark:    #070d1a;
+            --dark2:   #0a1220;
+            --dark3:   #0f1e35;
+            --accent:  #d4a017;
+            --accent2: #f0c842;
+            --pi:      #7c3aed;
+            --pi2:     #a78bfa;
+            --pi3:     #c4b5fd;
+            --gold:    linear-gradient(135deg, #d4a017, #f0c842, #d4a017);
+            --pi-grad: linear-gradient(135deg, #7c3aed, #a78bfa);
+            --green:   #10b981;
+            --red:     #ef4444;
+            --white:   #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--dark);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── BG MESH ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(124,58,237,0.18) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 80%, rgba(212,160,23,0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 40%, rgba(124,58,237,0.08) 0%, transparent 40%);
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(7,13,26,0.95); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(124,58,237,0.25);
+            height: 64px; display: flex; align-items: center; padding: 0 24px;
+            justify-content: space-between;
+        }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-logo-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--pi-grad); display: flex; align-items: center; justify-content: center;
+            font-family: 'Cinzel', serif; font-weight: 900; font-size: 1.1em; color: white;
+        }
+        .nav-logo-text { font-family: 'Cinzel', serif; font-size: 0.88em; color: var(--accent); letter-spacing: 0.5px; }
+        .nav-logo-sub { font-size: 0.65em; color: rgba(255,255,255,0.3); margin-top: 1px; }
+        .nav-back {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px;
+            font-size: 0.8em; text-decoration: none; transition: 0.2s;
+        }
+        .nav-back:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        /* ── LAYOUT ── */
+        .page-wrap {
+            position: relative; z-index: 1;
+            max-width: 860px; margin: 0 auto; padding: 40px 20px 80px;
+        }
+
+        /* ── HEADER ── */
+        .page-header { text-align: center; margin-bottom: 40px; }
+        .pi-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.35);
+            border-radius: 50px; padding: 6px 18px;
+            font-size: 0.72em; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--pi3); margin-bottom: 18px;
+        }
+        .pi-badge-dot { width: 7px; height: 7px; background: var(--pi2); border-radius: 50%; animation: pulse-dot 1.5s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+        .page-title { font-family: 'Playfair Display', serif; font-size: clamp(2em,5vw,2.8em); font-weight: 900; margin-bottom: 12px; }
+        .page-title .pi-text { color: var(--pi2); }
+        .page-desc { color: rgba(255,255,255,0.5); font-size: 0.92em; line-height: 1.6; max-width: 500px; margin: 0 auto; }
+
+        /* ── STATUS BANNER: bukan Pi Browser ── */
+        #not-pi-banner {
+            background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 14px; padding: 16px 20px; margin-bottom: 28px;
+            display: none; align-items: center; gap: 14px;
+        }
+        #not-pi-banner i { color: #fbbf24; font-size: 1.4em; flex-shrink: 0; }
+        #not-pi-banner p { color: rgba(255,255,255,0.7); font-size: 0.82em; line-height: 1.5; }
+        #not-pi-banner strong { color: #fbbf24; }
+
+        /* ── AUTH CARD ── */
+        .auth-card {
+            background: var(--dark2); border: 1px solid rgba(124,58,237,0.25);
+            border-radius: 20px; padding: 32px; text-align: center; margin-bottom: 28px;
+            display: none;
+        }
+        .auth-card.show { display: block; }
+        .auth-pi-icon {
+            width: 72px; height: 72px; border-radius: 50%; background: var(--pi-grad);
+            margin: 0 auto 18px; display: flex; align-items: center; justify-content: center;
+            font-size: 2em; box-shadow: 0 8px 32px rgba(124,58,237,0.5);
+            animation: pulse-pi 2.5s ease-in-out infinite;
+        }
+        @keyframes pulse-pi {
+            0%,100% { box-shadow: 0 8px 32px rgba(124,58,237,0.5); }
+            50% { box-shadow: 0 8px 48px rgba(124,58,237,0.85), 0 0 0 8px rgba(124,58,237,0.12); }
+        }
+        .auth-card h3 { font-family: 'Playfair Display',serif; font-size: 1.4em; margin-bottom: 8px; }
+        .auth-card p { color: rgba(255,255,255,0.45); font-size: 0.84em; margin-bottom: 24px; line-height: 1.5; }
+        .btn-pi-login {
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            background: var(--pi-grad); color: white;
+            border: none; border-radius: 12px; padding: 14px 32px;
+            font-family: 'DM Sans',sans-serif; font-weight: 700; font-size: 0.95em;
+            cursor: pointer; transition: all 0.25s; width: 100%; max-width: 320px;
+            box-shadow: 0 8px 28px rgba(124,58,237,0.4);
+        }
+        .btn-pi-login:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(124,58,237,0.55); }
+        .btn-pi-login:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+
+        /* ── USER INFO BAR ── */
+        #user-bar {
+            background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.25);
+            border-radius: 14px; padding: 14px 20px; margin-bottom: 28px;
+            display: none; align-items: center; gap: 14px;
+        }
+        #user-bar.show { display: flex; }
+        .user-av {
+            width: 42px; height: 42px; border-radius: 50%; background: var(--pi-grad);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1em; flex-shrink: 0;
+        }
+        .user-info { flex: 1; }
+        .user-name { font-weight: 700; font-size: 0.9em; color: var(--pi3); }
+        .user-sub { font-size: 0.72em; color: rgba(255,255,255,0.4); margin-top: 2px; }
+        .btn-logout-sm {
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+            color: rgba(239,68,68,0.7); padding: 6px 14px; border-radius: 8px;
+            font-size: 0.75em; cursor: pointer; font-family: 'DM Sans',sans-serif;
+            transition: 0.2s;
+        }
+        .btn-logout-sm:hover { background: rgba(239,68,68,0.2); }
+
+        /* ── PAYMENT PANELS ── */
+        .payment-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px; margin-bottom: 28px;
+        }
+        .pay-type-card {
+            background: var(--dark2); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px; padding: 24px; cursor: pointer; transition: all 0.25s;
+        }
+        .pay-type-card:hover { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.06); transform: translateY(-2px); }
+        .pay-type-card.active { border-color: rgba(124,58,237,0.6); background: rgba(124,58,237,0.1); }
+        .pay-type-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4em; margin-bottom: 14px;
+        }
+        .pay-type-card h3 { font-size: 1em; font-weight: 700; margin-bottom: 6px; }
+        .pay-type-card p { color: rgba(255,255,255,0.45); font-size: 0.78em; line-height: 1.4; }
+        .pay-type-card .pt-price { color: var(--pi2); font-weight: 700; font-size: 0.82em; margin-top: 10px; }
+
+        /* ── PAYMENT FORM ── */
+        .pay-form-card {
+            background: var(--dark2); border: 1px solid rgba(124,58,237,0.25);
+            border-radius: 20px; padding: 28px; display: none;
+        }
+        .pay-form-card.show { display: block; }
+        .pay-form-title {
+            font-family: 'Playfair Display', serif; font-size: 1.3em; margin-bottom: 6px;
+        }
+        .pay-form-sub { color: rgba(255,255,255,0.4); font-size: 0.8em; margin-bottom: 24px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { font-size: 0.78em; font-weight: 600; color: rgba(255,255,255,0.55); margin-bottom: 6px; display: block; }
+        .form-inp {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--white); padding: 12px 16px; border-radius: 10px;
+            font-family: 'DM Sans',sans-serif; font-size: 0.9em; outline: none; transition: 0.2s;
+        }
+        .form-inp:focus { border-color: rgba(124,58,237,0.5); background: rgba(124,58,237,0.05); }
+        select.form-inp option { background: var(--dark2); }
+        textarea.form-inp { resize: none; height: 80px; line-height: 1.5; }
+
+        /* ── SUMMARY BOX ── */
+        .pay-summary {
+            background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 14px; padding: 18px 20px; margin: 20px 0;
+        }
+        .pay-summary-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 0; font-size: 0.84em; color: rgba(255,255,255,0.6);
+        }
+        .pay-summary-row.total { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; padding-top: 12px; }
+        .pay-summary-row.total .val { color: var(--pi2); font-family: 'Playfair Display',serif; font-size: 1.3em; font-weight: 900; }
+        .pay-summary-row .val { color: var(--white); font-weight: 600; }
+
+        /* ── CTA BUTTON ── */
+        .btn-pay {
+            width: 100%; padding: 15px; border-radius: 12px; border: none;
+            background: var(--pi-grad); color: white;
+            font-family: 'DM Sans',sans-serif; font-weight: 700; font-size: 0.95em;
+            cursor: pointer; transition: all 0.25s; display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 8px 28px rgba(124,58,237,0.4); margin-top: 8px;
+        }
+        .btn-pay:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(124,58,237,0.55); }
+        .btn-pay:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+
+        /* ── STATUS MODAL ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px); z-index: 9999;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--dark2); border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 24px; padding: 40px 32px; text-align: center;
+            max-width: 360px; width: 100%; animation: modal-in 0.3s ease;
+        }
+        @keyframes modal-in { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+        .modal-icon { font-size: 3.5em; margin-bottom: 16px; }
+        .modal-title { font-family: 'Playfair Display',serif; font-size: 1.4em; margin-bottom: 10px; }
+        .modal-desc { color: rgba(255,255,255,0.5); font-size: 0.84em; line-height: 1.6; margin-bottom: 24px; }
+        .modal-id { font-size: 0.7em; color: rgba(255,255,255,0.25); font-family: monospace; word-break: break-all; margin-bottom: 16px; }
+        .btn-modal-close {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7); padding: 11px 28px; border-radius: 10px;
+            font-family: 'DM Sans',sans-serif; font-weight: 600; font-size: 0.88em; cursor: pointer; transition: 0.2s;
+        }
+        .btn-modal-close:hover { background: rgba(255,255,255,0.14); }
+
+        /* ── INFO FOOTER ── */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 40px; }
+        .info-card {
+            background: var(--dark2); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px; padding: 20px;
+        }
+        .info-card i { font-size: 1.3em; margin-bottom: 10px; display: block; }
+        .info-card h4 { font-size: 0.88em; font-weight: 700; margin-bottom: 6px; }
+        .info-card p { font-size: 0.77em; color: rgba(255,255,255,0.4); line-height: 1.5; }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: var(--dark3); border: 1px solid rgba(124,58,237,0.3);
+            color: white; padding: 12px 24px; border-radius: 50px;
+            font-size: 0.84em; font-weight: 600; z-index: 99999;
+            transition: transform 0.35s ease; white-space: nowrap;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── SPINNER ── */
+        .spin { animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            .page-wrap { padding: 24px 16px 60px; }
+            .pay-form-card { padding: 20px; }
+            nav { padding: 0 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon">π</div>
+        <div>
+            <div class="nav-logo-text">SAGATAMA</div>
+            <div class="nav-logo-sub">Pi Network Payment</div>
+        </div>
+    </a>
+    <a href="index.html" class="nav-back"><i class="fas fa-arrow-left"></i> Portal Utama</a>
+</nav>
+
+<!-- MAIN -->
+<div class="page-wrap">
+
+    <!-- HEADER -->
+    <div class="page-header">
+        <div class="pi-badge"><div class="pi-badge-dot"></div> Pi Network · Testnet/Sandbox</div>
+        <h1 class="page-title">Bayar dengan <span class="pi-text">Pi Coin</span></h1>
+        <p class="page-desc">Lakukan pembayaran donasi, produk, atau layanan Yayasan Hidayatul Amin Sagatama menggunakan Pi Network secara aman dan transparan.</p>
+    </div>
+
+    <!-- TESTNET WARNING BANNER -->
+    <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.3em;">⚠️</span>
+        <div>
+            <div style="color:#fbbf24;font-weight:700;font-size:0.85em;">MODE TESTNET / SANDBOX</div>
+            <div style="color:rgba(255,255,255,0.5);font-size:0.78em;margin-top:2px;">Halaman ini untuk pengujian saja. Transaksi menggunakan Pi Testnet, bukan Pi sungguhan.</div>
+        </div>
+    </div>
+
+    <!-- PERINGATAN: Bukan Pi Browser -->
+    <div id="not-pi-banner">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p><strong>Anda tidak menggunakan Pi Browser.</strong> Untuk melakukan pembayaran Pi, buka halaman ini melalui Pi Browser di perangkat Anda. Fitur informasi dan preview tetap tersedia.</p>
+    </div>
+
+
+    <!-- DEBUG PANEL — tampil di layar HP, hapus setelah beres -->
+    <div id="debug-panel" style="display:none;background:#0a1220;border:1px solid rgba(124,58,237,0.4);border-radius:14px;padding:16px 18px;margin-bottom:20px;font-family:monospace;">
+        <div style="color:#a78bfa;font-size:0.78em;font-weight:700;margin-bottom:10px;">🔧 DEBUG PI SDK</div>
+        <div id="dbg-content" style="font-size:0.72em;line-height:1.9;color:rgba(255,255,255,0.7);"></div>
+        <button onclick="document.getElementById('debug-panel').style.display='none'" style="margin-top:12px;background:rgba(255,255,255,0.07);border:none;color:rgba(255,255,255,0.5);padding:6px 14px;border-radius:6px;font-size:0.72em;cursor:pointer;">Tutup Debug</button>
+    </div>
+    <!-- AUTH CARD — tampil jika belum login Pi -->
+    <div class="auth-card" id="auth-card">
+        <div class="auth-pi-icon">π</div>
+        <h3>Login dengan Pi Network</h3>
+        <p>Hubungkan akun Pi Browser Anda untuk mulai melakukan pembayaran. Data Anda aman — hanya username dan wallet yang diakses.</p>
+        <button class="btn-pi-login" id="pi-login-btn" onclick="doLoginPi()">
+            <i class="fas fa-circle-nodes"></i> Hubungkan Pi Account
+        </button>
+    </div>
+
+    <!-- USER BAR — tampil setelah login -->
+    <div id="user-bar">
+        <div class="user-av" id="user-av">π</div>
+        <div class="user-info">
+            <div class="user-name" id="user-name">—</div>
+            <div class="user-sub" id="user-sub">Pi Network · Terautentikasi ✓</div>
+        </div>
+        <button class="btn-logout-sm" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+    </div>
+
+    <!-- PILIH JENIS PEMBAYARAN -->
+    <div class="payment-grid" id="payment-grid">
+        <div class="pay-type-card" onclick="selectType('donasi', this)">
+            <div class="pay-type-icon" style="background:rgba(212,160,23,0.15);color:#d4a017;">🕌</div>
+            <h3>Donasi & Wakaf</h3>
+            <p>Dukung pembangunan masjid, gedung sekolah, dan asrama santri Yayasan Sagatama.</p>
+            <div class="pt-price">Min: 0.01 Pi · Bebas nominal</div>
+        </div>
+        <div class="pay-type-card" onclick="selectType('produk', this)">
+            <div class="pay-type-icon" style="background:rgba(13,148,136,0.15);color:#5eead4;">🛒</div>
+            <h3>Beli Produk</h3>
+            <p>Madu Hidayatul Amin, Herbal Surau, Beras Organik, Buku Pesantren, dan lainnya.</p>
+            <div class="pt-price">Harga sesuai produk · Pi Coin</div>
+        </div>
+        <div class="pay-type-card" onclick="selectType('layanan', this)">
+            <div class="pay-type-icon" style="background:rgba(124,58,237,0.15);color:#c4b5fd;">💻</div>
+            <h3>Jasa Digital & AI</h3>
+            <p>Website Firebase, Asisten AI, Prompt Engineering untuk masjid atau bisnis halal Anda.</p>
+            <div class="pt-price">Mulai 100 Pi · Konsultasi gratis</div>
+        </div>
+    </div>
+
+    <!-- FORM PEMBAYARAN -->
+    <div class="pay-form-card" id="pay-form-card">
+        <div class="pay-form-title" id="form-title">Donasi via Pi Network</div>
+        <div class="pay-form-sub" id="form-sub">Isi detail pembayaran di bawah ini</div>
+
+        <!-- Donasi Fields -->
+        <div id="fields-donasi">
+            <div class="form-group">
+                <label class="form-label">Jumlah Pi</label>
+                <input type="number" class="form-inp" id="donasi-amount" placeholder="Contoh: 1.5" min="0.01" step="0.01" oninput="updateSummary()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Peruntukan Donasi</label>
+                <select class="form-inp" id="donasi-category" onchange="updateSummary()">
+                    <option value="">-- Pilih Peruntukan --</option>
+                    <option value="Masjid Al-Amin">🕌 Pembangunan Masjid Al-Amin</option>
+                    <option value="Gedung Kelas">🏫 Gedung Kelas Terpadu</option>
+                    <option value="Asrama Santri">🏠 Asrama Putra & Putri</option>
+                    <option value="AI Lab">💻 Sagatama AI Lab Center</option>
+                    <option value="Beasiswa Santri">📚 Beasiswa Santri Berprestasi</option>
+                    <option value="Operasional Umum">🌙 Operasional Umum Yayasan</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nama Donatur (opsional)</label>
+                <input type="text" class="form-inp" id="donasi-name" placeholder="Nama Anda atau ingin Anonim">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Pesan / Doa (opsional)</label>
+                <textarea class="form-inp" id="donasi-pesan" placeholder="Tuliskan doa atau pesan untuk yayasan..."></textarea>
+            </div>
+        </div>
+
+        <!-- Produk Fields -->
+        <div id="fields-produk" style="display:none;">
+            <div class="form-group">
+                <label class="form-label">Pilih Produk</label>
+                <select class="form-inp" id="produk-select" onchange="onProdukChange()">
+                    <option value="">-- Pilih Produk --</option>
+                    <option value="Madu Hidayatul Amin|47.8">🍯 Madu Hidayatul Amin — 47.8 Pi</option>
+                    <option value="Ramuan Herbal Surau|27.2">🌿 Ramuan Herbal Surau — 27.2 Pi</option>
+                    <option value="Beras Organik Silsilah|28">🌾 Beras Organik Silsilah (5kg) — 28 Pi</option>
+                    <option value="Buku Saku Rahasia 513|15">📖 Buku Saku Rahasia 513 — 15 Pi</option>
+                    <option value="Kaos Sagatama AI|35">👕 Kaos Sagatama AI — 35 Pi</option>
+                    <option value="Madu Hitam Habatussauda|55">🍯 Madu Hitam Habatussauda — 55 Pi</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Jumlah (Qty)</label>
+                <input type="number" class="form-inp" id="produk-qty" value="1" min="1" max="20" oninput="updateSummary()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nama Pemesan</label>
+                <input type="text" class="form-inp" id="produk-name" placeholder="Nama lengkap Anda">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Alamat Pengiriman</label>
+                <textarea class="form-inp" id="produk-alamat" placeholder="Alamat lengkap pengiriman (kota, provinsi, kode pos)..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nomor WhatsApp</label>
+                <input type="tel" class="form-inp" id="produk-wa" placeholder="08xx-xxxx-xxxx">
+            </div>
+        </div>
+
+        <!-- Layanan Fields -->
+        <div id="fields-layanan" style="display:none;">
+            <div class="form-group">
+                <label class="form-label">Jenis Layanan</label>
+                <select class="form-inp" id="layanan-select" onchange="onLayananChange()">
+                    <option value="">-- Pilih Layanan --</option>
+                    <option value="Website Firebase|450">🌐 Jasa Website Firebase — 450 Pi</option>
+                    <option value="Asisten AI Custom|750">🤖 Asisten AI Custom — 750 Pi</option>
+                    <option value="Konsultasi Digital|100">💬 Konsultasi Digital (1 jam) — 100 Pi</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nama / Organisasi</label>
+                <input type="text" class="form-inp" id="layanan-name" placeholder="Nama Anda atau nama instansi">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kebutuhan / Brief Proyek</label>
+                <textarea class="form-inp" id="layanan-brief" style="height:100px;" placeholder="Ceritakan kebutuhan Anda secara singkat..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nomor WhatsApp</label>
+                <input type="tel" class="form-inp" id="layanan-wa" placeholder="08xx-xxxx-xxxx">
+            </div>
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="pay-summary" id="pay-summary" style="display:none;">
+            <div class="pay-summary-row"><span>Jenis</span><span class="val" id="sum-jenis">—</span></div>
+            <div class="pay-summary-row"><span>Detail</span><span class="val" id="sum-detail">—</span></div>
+            <div class="pay-summary-row"><span>Penerima</span><span class="val">@sagatama_pi · Yayasan Sagatama</span></div>
+            <div class="pay-summary-row total"><span>Total</span><span class="val" id="sum-total">— Pi</span></div>
+        </div>
+
+        <button class="btn-pay" id="pay-btn" onclick="doPayment()">
+            <i class="fas fa-circle-nodes"></i> Bayar dengan Pi Network
+        </button>
+        <p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72em;margin-top:12px;">
+            <i class="fas fa-lock"></i> Transaksi diproses langsung oleh Pi Network SDK · Aman & Terverifikasi
+        </p>
+    </div>
+
+    <!-- INFO FOOTER -->
+    <div class="info-grid">
+        <div class="info-card">
+            <i class="fas fa-circle-nodes" style="color:var(--pi2);"></i>
+            <h4>Pi Network Mainnet</h4>
+            <p>Semua transaksi menggunakan Pi Coin di mainnet Pi Network yang sudah aktif.</p>
+        </div>
+        <div class="info-card">
+            <i class="fas fa-fire" style="color:#fbbf24;"></i>
+            <h4>Dicatat di Firebase</h4>
+            <p>Setiap pembayaran dicatat di Firestore Sagatama untuk transparansi dan pelaporan yayasan.</p>
+        </div>
+        <div class="info-card">
+            <i class="fab fa-whatsapp" style="color:#25d366;"></i>
+            <h4>Konfirmasi via WA</h4>
+            <p>Admin akan konfirmasi pesanan/donasi Anda melalui WhatsApp dalam 1×24 jam kerja.</p>
+        </div>
+        <div class="info-card">
+            <i class="fas fa-hand-holding-heart" style="color:var(--accent);"></i>
+            <h4>Untuk Pesantren</h4>
+            <p>Setiap Pi yang masuk digunakan sepenuhnya untuk kegiatan dan pembangunan yayasan.</p>
+        </div>
+    </div>
+</div><!-- end page-wrap -->
+
+<!-- MODAL STATUS -->
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-icon" id="modal-icon">✅</div>
+        <div class="modal-title" id="modal-title">Pembayaran Berhasil!</div>
+        <div class="modal-desc" id="modal-desc">Jazakallahu Khairan atas dukungan Anda.</div>
+        <div class="modal-id" id="modal-id"></div>
+        <button class="btn-modal-close" onclick="closeModal()">Tutup</button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────────────────
+//  FIREBASE CONFIG — ganti dengan config Anda
+// ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+    apiKey:            "AIzaSyDNWOochfAyHjBYUNyq2IAYhA9p7Ie834M",
+    authDomain:        "portal-sagatama.firebaseapp.com",
+    projectId:         "portal-sagatama",
+    storageBucket:     "portal-sagatama.firebasestorage.app",
+    messagingSenderId: "372845954028",
+    appId:             "1:372845954028:web:189f2a3127ea8189b9f6c9"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db      = firebase.firestore();
+const fireAuth = firebase.auth();
+
+// ─────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────
+let _piUser   = null;
+let _fireUser = null;
+let _type     = null;
+
+// ─────────────────────────────────────────────────────────
+//  DEBUG HELPER — tampil di layar HP
+// ─────────────────────────────────────────────────────────
+function dbg(msg, color) {
+    var panel = document.getElementById('debug-panel');
+    var box   = document.getElementById('dbg-content');
+    if (!panel || !box) return;
+    panel.style.display = 'block';
+    var line = document.createElement('div');
+    line.style.color = color || 'rgba(255,255,255,0.75)';
+    line.textContent = new Date().toLocaleTimeString('id') + '  ' + msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+}
+
+// ─────────────────────────────────────────────────────────
+//  INIT — cek Pi Browser & status SDK
+//  Dipanggil dari DOMContentLoaded setelah Pi.init() selesai
+// ─────────────────────────────────────────────────────────
+function _initPiUI() {
+    var sdkLoaded = window._piSdkLoaded;
+    var initOk    = window._piInitOk;
+    var initErr   = window._piInitErr;
+
+    dbg('Pi SDK loaded : ' + sdkLoaded);
+    dbg('Pi.init ok    : ' + initOk + (initErr ? ' | err: ' + initErr : ''));
+    dbg('window.Pi     : ' + (typeof window.Pi));
+    dbg('User-Agent    : ' + navigator.userAgent.substring(0, 80));
+
+    if (!sdkLoaded || typeof window.Pi === 'undefined') {
+        document.getElementById('not-pi-banner').style.display = 'flex';
+        document.getElementById('auth-card').classList.add('show');
+        document.getElementById('pi-login-btn').disabled = true;
+        document.getElementById('pi-login-btn').innerHTML = '<i class="fas fa-ban"></i> Buka di Pi Browser';
+        dbg('⛔ Bukan Pi Browser — tombol dinonaktifkan', '#fca5a5');
+        return;
+    }
+
+    // Cek sesi tersimpan
+    try {
+        var saved = sessionStorage.getItem('_pi_user');
+        if (saved) {
+            _piUser = JSON.parse(saved);
+            _showUserBar();
+            dbg('✅ Sesi tersimpan ditemukan: @' + (_piUser.username || '?'), '#6ee7b7');
+            return;
+        }
+    } catch(e) { sessionStorage.removeItem('_pi_user'); }
+
+    document.getElementById('auth-card').classList.add('show');
+    dbg('✅ Pi Browser terdeteksi — siap login', '#6ee7b7');
+}
+
+// ─────────────────────────────────────────────────────────
+//  TAMPILKAN USER BAR
+// ─────────────────────────────────────────────────────────
+function _showUserBar() {
+    document.getElementById('auth-card').classList.remove('show');
+    document.getElementById('user-bar').classList.add('show');
+    var uname = _piUser.username || _piUser.uid || 'PiUser';
+    document.getElementById('user-av').textContent   = uname[0].toUpperCase();
+    document.getElementById('user-name').textContent = '@' + uname;
+    document.getElementById('user-sub').textContent  =
+        _piUser.wallet_address
+            ? 'Wallet: ' + _piUser.wallet_address.slice(0, 16) + '...'
+            : 'Pi Network · Terautentikasi ✓';
+}
+
+// ─────────────────────────────────────────────────────────
+//  PI AUTH — panggil Pi.authenticate dengan benar
+//  Pi SDK v2.0 return Promise — cukup .then()/.catch()
+//  JANGAN await langsung di async function jika ada masalah
+// ─────────────────────────────────────────────────────────
+function doLoginPi() {
+    if (typeof window.Pi === 'undefined') {
+        showToast('❌ Buka halaman ini di Pi Browser');
+        return;
+    }
+
+    var btn = document.getElementById('pi-login-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner spin"></i> Menghubungkan...';
+
+    dbg('🔄 Memanggil Pi.authenticate...', '#c4b5fd');
+
+    // Timeout 30 detik
+    var settled = false;
+    var tid = setTimeout(function() {
+        if (settled) return;
+        settled = true;
+        dbg('⏱️ TIMEOUT 30 detik — Pi tidak merespons', '#fca5a5');
+        showToast('⏱️ Timeout — pastikan sudah login di Pi App, lalu coba lagi');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-circle-nodes"></i> Hubungkan Pi Account';
+    }, 30000);
+
+    function onSuccess(result) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(tid);
+        dbg('✅ Pi.authenticate resolve — data: ' + JSON.stringify(Object.keys(result || {})), '#6ee7b7');
+
+        if (!result || !result.user) {
+            dbg('⛔ result.user kosong!', '#fca5a5');
+            showToast('❌ Gagal: data user tidak diterima dari Pi');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-circle-nodes"></i> Hubungkan Pi Account';
+            return;
+        }
+
+        _piUser = result.user;
+        dbg('👤 Username: @' + (_piUser.username || '?'), '#6ee7b7');
+        dbg('💰 Wallet  : ' + (_piUser.wallet_address || 'tidak ada'), '#6ee7b7');
+
+        try { sessionStorage.setItem('_pi_user', JSON.stringify(_piUser)); } catch(e) {}
+
+        // Firebase anonymous login — tidak menghalangi kalau gagal
+        fireAuth.signInAnonymously()
+            .then(function(cred) {
+                _fireUser = cred.user;
+                dbg('🔥 Firebase anon login OK', '#6ee7b7');
+                return cred.user.updateProfile({ displayName: '@' + (_piUser.username || 'piuser') });
+            })
+            .catch(function(e) {
+                dbg('⚠️ Firebase login gagal (tidak masalah): ' + e.message, '#fbbf24');
+            })
+            .finally(function() {
+                _showUserBar();
+                showToast('✅ Terhubung sebagai @' + (_piUser.username || 'PiUser'));
+            });
+    }
+
+    function onError(err) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(tid);
+        var msg = (err && err.message) ? err.message : String(err);
+        dbg('❌ Pi.authenticate error: ' + msg, '#fca5a5');
+        if (!msg || msg === 'undefined' || msg === 'null') msg = 'Koneksi gagal. Coba lagi.';
+        else if (msg.toLowerCase().includes('cancel')) msg = 'Login dibatalkan oleh pengguna.';
+        else if (msg.toLowerCase().includes('not logged') || msg.toLowerCase().includes('not authenticated')) msg = 'Silakan login ke akun Pi Anda dulu di aplikasi Pi.';
+        showToast('❌ ' + msg);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-circle-nodes"></i> Hubungkan Pi Account';
+    }
+
+    try {
+        var p = Pi.authenticate(['username', 'payments', 'wallet_address'], onIncompletePaymentFound);
+        dbg('Pi.authenticate dipanggil — tipe return: ' + typeof p, '#c4b5fd');
+        if (p && typeof p.then === 'function') {
+            p.then(onSuccess).catch(onError);
+        } else {
+            dbg('⚠️ Pi.authenticate tidak return Promise — mungkin callback style lama', '#fbbf24');
+            // Kalau tidak return Promise, tunggu onIncompletePaymentFound resolve dulu
+            // Tapi ini jarang terjadi di SDK v2 — kalau timeout berarti SDK bermasalah
+        }
+    } catch(e) {
+        onError(e);
+    }
+}
+
+async function doLogout() {
+    try { await fireAuth.signOut(); } catch(e) {}
+    _piUser = null; _fireUser = null; _type = null;
+    sessionStorage.removeItem('_pi_user');
+    document.getElementById('user-bar').classList.remove('show');
+    document.getElementById('auth-card').classList.add('show');
+    document.getElementById('pi-login-btn').disabled = false;
+    document.getElementById('pi-login-btn').innerHTML = '<i class="fas fa-circle-nodes"></i> Hubungkan Pi Account';
+    document.getElementById('pay-form-card').classList.remove('show');
+    document.querySelectorAll('.pay-type-card').forEach(function(c) { c.classList.remove('active'); });
+    document.getElementById('pay-summary').style.display = 'none';
+    dbg('👋 Logout — sesi dihapus', '#fbbf24');
+}
+
+// ──────────────────────────────────────────────────────────
+//  TYPE SELECTION
+// ──────────────────────────────────────────────────────────
+function selectType(type, card) {
+    if (!_piUser) { showToast('⚠️ Login Pi Network dulu'); return; }
+    _type = type;
+    document.querySelectorAll('.pay-type-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+
+    const titleMap = {
+        donasi:  'Donasi & Wakaf via Pi',
+        produk:  'Beli Produk via Pi',
+        layanan: 'Pesan Jasa Digital via Pi'
+    };
+    const subMap = {
+        donasi:  'Masukkan nominal dan pilih peruntukan donasi Anda',
+        produk:  'Pilih produk unggulan Yayasan Sagatama',
+        layanan: 'Konsultasikan kebutuhan digital Anda'
+    };
+    document.getElementById('form-title').textContent = titleMap[type];
+    document.getElementById('form-sub').textContent = subMap[type];
+
+    ['donasi','produk','layanan'].forEach(t => {
+        document.getElementById('fields-' + t).style.display = t === type ? 'block' : 'none';
+    });
+
+    document.getElementById('pay-form-card').classList.add('show');
+    document.getElementById('pay-summary').style.display = 'none';
+    document.getElementById('pay-form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    updateSummary();
+}
+
+// ──────────────────────────────────────────────────────────
+//  PRODUCT / LAYANAN CHANGE
+// ──────────────────────────────────────────────────────────
+function onProdukChange() { updateSummary(); }
+function onLayananChange() { updateSummary(); }
+
+// ──────────────────────────────────────────────────────────
+//  SUMMARY UPDATE
+// ──────────────────────────────────────────────────────────
+function updateSummary() {
+    if (!_type) return;
+    const sum = document.getElementById('pay-summary');
+    let jenis = '', detail = '', total = 0;
+
+    if (_type === 'donasi') {
+        const amt = parseFloat(document.getElementById('donasi-amount')?.value) || 0;
+        const cat = document.getElementById('donasi-category')?.value || '—';
+        jenis = 'Donasi Yayasan';
+        detail = cat || '—';
+        total = amt;
+    } else if (_type === 'produk') {
+        const sel = document.getElementById('produk-select')?.value || '';
+        const qty = parseInt(document.getElementById('produk-qty')?.value) || 1;
+        if (sel) {
+            const [nama, harga] = sel.split('|');
+            jenis = 'Produk';
+            detail = nama + ' × ' + qty;
+            total = parseFloat(harga) * qty;
+        }
+    } else if (_type === 'layanan') {
+        const sel = document.getElementById('layanan-select')?.value || '';
+        if (sel) {
+            const [nama, harga] = sel.split('|');
+            jenis = 'Jasa Digital';
+            detail = nama;
+            total = parseFloat(harga);
+        }
+    }
+
+    if (total > 0) {
+        document.getElementById('sum-jenis').textContent = jenis;
+        document.getElementById('sum-detail').textContent = detail;
+        document.getElementById('sum-total').textContent = total.toFixed(2) + ' Pi';
+        sum.style.display = 'block';
+    } else {
+        sum.style.display = 'none';
+    }
+}
+
+// ──────────────────────────────────────────────────────────
+//  PAYMENT EXECUTION
+// ──────────────────────────────────────────────────────────
+async function doPayment() {
+    if (!_piUser) { showToast('⚠️ Login Pi dulu'); return; }
+    if (typeof window.Pi === 'undefined') { showToast('❌ Buka di Pi Browser'); return; }
+
+    // Validasi & kumpulkan data
+    let amount = 0, memo = '', metadata = {};
+
+    if (_type === 'donasi') {
+        amount = parseFloat(document.getElementById('donasi-amount')?.value) || 0;
+        const cat  = document.getElementById('donasi-category')?.value;
+        const name = document.getElementById('donasi-name')?.value?.trim() || 'Anonim';
+        const pesan = document.getElementById('donasi-pesan')?.value?.trim() || '';
+        if (!amount || amount < 0.01) { showToast('⚠️ Masukkan jumlah Pi minimal 0.01'); return; }
+        if (!cat) { showToast('⚠️ Pilih peruntukan donasi'); return; }
+        memo = 'Donasi Sagatama: ' + cat;
+        metadata = { type: 'donasi', category: cat, donaturName: name, pesan, piUsername: _piUser.username };
+
+    } else if (_type === 'produk') {
+        const sel  = document.getElementById('produk-select')?.value || '';
+        const qty  = parseInt(document.getElementById('produk-qty')?.value) || 1;
+        const name = document.getElementById('produk-name')?.value?.trim();
+        const alamat = document.getElementById('produk-alamat')?.value?.trim();
+        const wa   = document.getElementById('produk-wa')?.value?.trim();
+        if (!sel) { showToast('⚠️ Pilih produk'); return; }
+        if (!name) { showToast('⚠️ Masukkan nama pemesan'); return; }
+        if (!alamat) { showToast('⚠️ Masukkan alamat pengiriman'); return; }
+        if (!wa) { showToast('⚠️ Masukkan nomor WhatsApp'); return; }
+        const [nama, harga] = sel.split('|');
+        amount = parseFloat(harga) * qty;
+        memo = 'Sagatama Mart: ' + nama + ' x' + qty;
+        metadata = { type: 'produk', produk: nama, qty, hargaSatuan: harga, pemesanName: name, alamat, wa, piUsername: _piUser.username };
+
+    } else if (_type === 'layanan') {
+        const sel   = document.getElementById('layanan-select')?.value || '';
+        const name  = document.getElementById('layanan-name')?.value?.trim();
+        const brief = document.getElementById('layanan-brief')?.value?.trim();
+        const wa    = document.getElementById('layanan-wa')?.value?.trim();
+        if (!sel) { showToast('⚠️ Pilih jenis layanan'); return; }
+        if (!name) { showToast('⚠️ Masukkan nama/organisasi'); return; }
+        if (!wa) { showToast('⚠️ Masukkan nomor WhatsApp'); return; }
+        const [nama, harga] = sel.split('|');
+        amount = parseFloat(harga);
+        memo = 'Sagatama Digital: ' + nama;
+        metadata = { type: 'layanan', layanan: nama, clientName: name, brief, wa, piUsername: _piUser.username };
+
+    } else { showToast('⚠️ Pilih jenis pembayaran'); return; }
+
+    const btn = document.getElementById('pay-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner spin"></i> Memproses di Pi Browser...';
+
+    try {
+        // Buat payment via Pi SDK
+        const paymentData = {
+            amount: amount,
+            memo: memo,
+            metadata: metadata
+        };
+
+        const payment = await Pi.createPayment(paymentData, {
+            onReadyForServerApproval: function(paymentId) {
+                dbg('💳 onReadyForServerApproval: ' + paymentId, '#c4b5fd');
+                db.collection('pi_payments').doc(paymentId).set({
+                    paymentId: paymentId,
+                    amount:    amount,
+                    memo:      memo,
+                    metadata:  metadata,
+                    piUsername: _piUser ? (_piUser.username || _piUser.uid) : 'unknown',
+                    status:    'pending_approval',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(function(e) { dbg('Firestore set error: ' + e.message, '#fca5a5'); });
+                // NOTE: Approval harus dilakukan via backend server
+                // POST https://api.minepi.com/v2/payments/{id}/approve (dengan server API key)
+                dbg('⚠️ Butuh backend server untuk approve payment ini', '#fbbf24');
+            },
+
+            onReadyForServerCompletion: function(paymentId, txid) {
+                dbg('✅ onReadyForServerCompletion: ' + paymentId + ' | txid: ' + txid, '#6ee7b7');
+                db.collection('pi_payments').doc(paymentId).set({
+                    txid:      txid,
+                    status:    'pending_completion',
+                    txAt:      firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).catch(function(e) { dbg('Firestore update error: ' + e.message, '#fca5a5'); });
+                // NOTE: Completion harus dilakukan via backend server
+                // POST https://api.minepi.com/v2/payments/{id}/complete (dengan server API key)
+                dbg('⚠️ Butuh backend server untuk complete payment ini', '#fbbf24');
+            },
+
+            onCancel: function(paymentId) {
+                console.log('[Pi Payment] Cancelled:', paymentId);
+                db.collection('pi_payments').doc(paymentId).update({ status: 'cancelled' }).catch(()=>{});
+                showToast('❌ Pembayaran dibatalkan');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-circle-nodes"></i> Bayar dengan Pi Network';
+            },
+
+            onError: function(error, payment) {
+                console.error('[Pi Payment] Error:', error);
+                showToast('❌ Error: ' + (error.message || 'Coba lagi'));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-circle-nodes"></i> Bayar dengan Pi Network';
+            }
+        });
+
+        // Berhasil — tampilkan modal sukses
+        const pid = payment?.identifier || '—';
+        showModal('✅', 'Pembayaran Berhasil!',
+            'Jazakallahu Khairan! Pembayaran ' + amount.toFixed(2) + ' Pi untuk "' + memo + '" telah diproses. Admin akan menghubungi Anda via WhatsApp dalam 1×24 jam.',
+            'Payment ID: ' + pid
+        );
+
+    } catch(e) {
+        console.error('[Pi Payment] Fatal:', e);
+        if (e.message && e.message.includes('cancel')) {
+            showToast('❌ Pembayaran dibatalkan oleh pengguna');
+        } else {
+            showToast('❌ Pembayaran gagal: ' + (e.message || 'Coba lagi'));
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-circle-nodes"></i> Bayar dengan Pi Network';
+    }
+}
+
+// ──────────────────────────────────────────────────────────
+//  INCOMPLETE PAYMENT HANDLER (wajib ada di Pi SDK)
+// ──────────────────────────────────────────────────────────
+function onIncompletePaymentFound(payment) {
+    dbg('⚠️ Incomplete payment: ' + (payment && payment.identifier ? payment.identifier : 'unknown'), '#fbbf24');
+    if (!payment || !payment.identifier) return;
+    db.collection('pi_incomplete_payments').doc(payment.identifier).set({
+        paymentId:  payment.identifier,
+        amount:     payment.amount || 0,
+        memo:       payment.memo   || '',
+        txid:       (payment.transaction && payment.transaction.txid) || null,
+        status:     'incomplete',
+        reportedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(function(e) {
+        dbg('Firestore incomplete save error: ' + e.message, '#fca5a5');
+    });
+}
+
+// ──────────────────────────────────────────────────────────
+//  MODAL & TOAST
+// ──────────────────────────────────────────────────────────
+function showModal(icon, title, desc, id) {
+    document.getElementById('modal-icon').textContent = icon;
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-desc').textContent = desc;
+    document.getElementById('modal-id').textContent = id || '';
+    document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>
