@@ -1,15 +1,8 @@
 {
   "name": "sagatama-pi-backend",
   "version": "1.0.0",
-  "description": "Vercel Serverless Functions untuk Pi Network Payment — Yayasan Hidayatul Amin Sagatama",
-  "private": true,
-{
-  "name": "sagatama-pi-backend",
-  "version": "1.0.0",
-  "description": "Vercel Serverless Functions untuk Pi Network Payment — Yayasan Hidayatul Amin Sagatama",
   "private": true,
   "engines": {
     "node": "24.x"
   }
-}
 }
