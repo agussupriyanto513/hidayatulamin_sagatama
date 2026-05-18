@@ -17,6 +17,6 @@
     { "source": "/api/payments/verify-user", "destination": "/api/payments/verify-user.js" }
   ],
   "redirects": [
-    { "source": "/", "destination": "/pi-payment-testnet.html", "permanent": false }
+    { "source": "/", "destination": "/pi-payment.html", "permanent": false }
   ]
 }
