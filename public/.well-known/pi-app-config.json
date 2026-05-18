@@ -1,1 +1,12 @@
-
+{
+  "name": "Hidayatul Amin Sagatama",
+  "description": "Portal pembayaran Pi Network untuk donasi, produk, dan layanan Yayasan Hidayatul Amin Sagatama.",
+  "app_url": "https://website-sagatama.vercel.app",
+  "developer": {
+    "name": "Yayasan Pendidikan Hidayatulamin Sagatama",
+    "email": "agussupriyantosaragih@gmail.com"
+  },
+  "categories": ["education", "social"],
+  "privacy_policy_url": "https://website-sagatama.vercel.app/privacy-policy.html",
+  "terms_of_service_url": "https://website-sagatama.vercel.app/terms-of-service.html"
+}
