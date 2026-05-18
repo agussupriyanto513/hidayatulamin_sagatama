@@ -2295,6 +2295,7 @@
                             </div>
                             <div style="font-size:0.67em;color:rgba(255,255,255,0.35);margin-bottom:4px;">Alamat Pi Wallet kamu</div>
                             <input style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);color:#fff;padding:10px 12px;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.83em;outline:none;margin-bottom:10px;" type="text" id="swm-pi-wallet-addr" placeholder="Contoh: @usernamePi atau alamat wallet">
+                            <div id="swm-pi-wallet-hint" style="font-size:0.68em;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4;"></div>
                             <!-- Preview -->
                             <div id="swm-pi-preview" style="display:none;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.16);border-radius:9px;padding:10px 12px;margin-bottom:10px;font-size:0.74em;">
                                 <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:rgba(255,255,255,0.4);">SGT dikurangi</span><span style="color:#c4b5fd;font-weight:700;font-family:'Cinzel',serif;" id="prev-sgt">0 SGT</span></div>
@@ -5158,26 +5159,34 @@ async function swtSignInPi() {
     if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menghubungkan Pi...`; }
     try {
         _swtErrMsg('');
-        // Autentikasi dengan Pi SDK — minta akses username
+        // Autentikasi dengan Pi SDK — minta akses username, payments, dan wallet_address
         const authResult = await Pi.authenticate(['username', 'payments', 'wallet_address'], onIncompletePaymentFound);
         const piUser = authResult.user;
         const piUsername = piUser.username;
-        const piUid = piUser.uid || piUsername; // uid dari Pi
-        const piWallet = authResult.user.wallet_address || '';
+        const piUid = piUser.uid || piUsername;
 
-        // Simpan sesi Pi ke Firebase sebagai custom token atau anonymous + data Pi
-        // Karena Pi SDK tidak menghasilkan Firebase token, kita simpan data Pi ke Firestore
-        // dan gunakan anonymous auth sebagai carrier session
+        // Coba ambil wallet_address dari berbagai lokasi di response Pi SDK
+        const piWallet =
+            authResult.user?.wallet_address ||
+            authResult.wallet_address ||
+            authResult.walletAddress ||
+            '';
+
+        console.log('[Pi Login] username:', piUsername);
+        console.log('[Pi Login] wallet_address raw:', authResult.user?.wallet_address);
+        console.log('[Pi Login] wallet resolved:', piWallet || '(kosong — user belum KYC atau wallet belum aktif)');
+
+        // Simpan sesi Pi ke Firebase menggunakan anonymous auth sebagai carrier session
         let firebaseUser = firebase.auth().currentUser;
         if (!firebaseUser) {
             const anonCred = await firebase.auth().signInAnonymously();
             firebaseUser = anonCred.user;
         }
 
-        // Update profile dengan username Pi
+        // Update display name dengan username Pi
         await firebaseUser.updateProfile({ displayName: '🟣 ' + piUsername });
 
-        // Simpan info Pi ke Firestore dokumen user
+        // Simpan info Pi ke Firestore
         await window.db.collection('sgt_users').doc(firebaseUser.uid).set({
             piUsername: piUsername,
             piUid: piUid,
@@ -5186,14 +5195,56 @@ async function swtSignInPi() {
             lastPiLogin: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
+        // Auto-isi field alamat Pi Wallet jika wallet_address berhasil didapat
+        const walletInput = document.getElementById('swm-pi-wallet-addr');
+        if (walletInput) {
+            if (piWallet) {
+                walletInput.value = piWallet;
+                walletInput.setAttribute('readonly', 'readonly');
+                walletInput.style.background = 'rgba(124,58,237,0.12)';
+                walletInput.style.borderColor = 'rgba(124,58,237,0.4)';
+                walletInput.style.color = '#c4b5fd';
+                // Tambah label info
+                const walletHint = document.getElementById('swm-pi-wallet-hint');
+                if (walletHint) {
+                    walletHint.textContent = '✅ Wallet address terdeteksi otomatis dari Pi Browser';
+                    walletHint.style.color = '#86efac';
+                }
+            } else {
+                // Wallet kosong — user belum KYC / wallet belum diaktifkan
+                walletInput.removeAttribute('readonly');
+                walletInput.placeholder = '@' + piUsername + ' (isi manual — wallet belum terdeteksi)';
+                walletInput.style.background = '';
+                walletInput.style.borderColor = 'rgba(251,191,36,0.4)';
+                const walletHint = document.getElementById('swm-pi-wallet-hint');
+                if (walletHint) {
+                    walletHint.textContent = '⚠️ Wallet address tidak terdeteksi otomatis. Isi username Pi (@' + piUsername + ') atau alamat wallet Anda secara manual.';
+                    walletHint.style.color = '#fbbf24';
+                }
+            }
+        }
+
         // Tutup dan buka ulang wallet agar render ulang
         closeSGTWallet();
         setTimeout(openSGTWallet, 300);
-        showToast('🟣 Login Pi Network berhasil! Selamat datang, @' + piUsername);
+
+        const walletMsg = piWallet
+            ? '🟣 Login Pi berhasil! Wallet terdeteksi otomatis.'
+            : '🟣 Login Pi berhasil, @' + piUsername + '! Isi wallet address secara manual untuk penukaran Pi.';
+        showToast(walletMsg);
 
     } catch(e) {
-        console.error('[Pi Login]', e);
-        _swtErrMsg('Login Pi gagal: ' + (e.message || 'Coba lagi.'));
+        console.error('[Pi Login] Error:', e);
+        // Pesan error yang lebih informatif
+        let errMsg = 'Login Pi gagal.';
+        if (e.message?.includes('cancelled') || e.message?.includes('cancel')) {
+            errMsg = 'Login dibatalkan. Silakan coba lagi.';
+        } else if (e.message?.includes('network') || e.message?.includes('Network')) {
+            errMsg = 'Gagal terhubung ke Pi Network. Periksa koneksi internet Anda.';
+        } else if (e.message) {
+            errMsg = 'Login Pi gagal: ' + e.message;
+        }
+        _swtErrMsg(errMsg);
     } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="50" fill="#7c3aed"/><text y="68" x="50" text-anchor="middle" font-size="60" font-family="serif" font-weight="bold" fill="white">π</text></svg> Masuk dengan Pi Network`; }
     }
@@ -5233,10 +5284,20 @@ function swtUpdatePiPreview() {
 async function swtRequestPi() {
     if (!_swtUser) return alert('Silakan login ke Wallet terlebih dahulu.');
     const amt = parseInt(document.getElementById('swm-pi-sgt-amt')?.value) || 0;
-    const wallet = document.getElementById('swm-pi-wallet-addr')?.value?.trim();
+    let wallet = document.getElementById('swm-pi-wallet-addr')?.value?.trim();
     const bal = _swtData?.balance || 0;
     if (amt < 500 || amt % 500 !== 0) return alert('Minimal 500 SGT, kelipatan 500.');
-    if (!wallet) return alert('Masukkan alamat Pi Wallet.');
+    if (!wallet) return alert('Masukkan alamat Pi Wallet atau username Pi (@username) Anda.');
+    // Normalisasi: pastikan username Pi diawali @
+    if (!wallet.startsWith('@') && !wallet.startsWith('G') && wallet.length < 56) {
+        wallet = '@' + wallet;
+    }
+    // Validasi minimal: username minimal 3 karakter atau alamat wallet Pi (dimulai G, 56 karakter)
+    const isUsername = wallet.startsWith('@') && wallet.length >= 4;
+    const isPiAddress = wallet.startsWith('G') && wallet.length === 56;
+    if (!isUsername && !isPiAddress) {
+        return alert('Format wallet tidak valid.\nGunakan username Pi (contoh: @namaAnda) atau alamat wallet Pi (56 karakter diawali G).');
+    }
     if (amt > bal) return alert('Saldo SGT tidak cukup! Saldo kamu: ' + bal + ' SGT');
     const btn = document.getElementById('swm-pi-submit-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...'; }
@@ -5254,7 +5315,11 @@ async function swtRequestPi() {
         await _swtSave(_swtUser.uid);
         _swtUpdateUI();
         document.getElementById('swm-pi-sgt-amt').value = '';
-        document.getElementById('swm-pi-wallet-addr').value = '';
+        // Hanya reset wallet input jika bukan auto-filled dari Pi SDK
+        const walletInput = document.getElementById('swm-pi-wallet-addr');
+        if (walletInput && !walletInput.hasAttribute('readonly')) {
+            walletInput.value = '';
+        }
         swtUpdatePiPreview();
         alert('✅ Permintaan penukaran Pi berhasil diajukan!\nAdmin akan transfer dalam 1×24 jam.');
     } catch (e) { alert('Gagal mengajukan: ' + e.message); }
