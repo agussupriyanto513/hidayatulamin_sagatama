@@ -12,7 +12,8 @@ const PI_API_BASE = "https://api.minepi.com";
 
 const ALLOWED_ORIGINS = [
     "https://sagatama-mart.vercel.app",
-    "https://hidayatulamin.vercel.app"
+    "https://hidayatulamin.vercel.app",
+    "https://website-sagatama.vercel.app"
 ];
 
 function setCors(req, res) {
