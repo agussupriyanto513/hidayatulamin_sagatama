@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kebijakan Privasi — Hidayatul Amin Sagatama</title>
+    <meta name="description" content="Kebijakan privasi dan perlindungan data pengguna Yayasan Hidayatul Amin Sagatama.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c3aed'/><text y='.85em' font-size='75' x='50%' text-anchor='middle' fill='white' font-family='serif'>π</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:        #06080f;
+            --bg2:       #0a0e1a;
+            --bg3:       #0f1425;
+            --pi:        #7c3aed;
+            --pi2:       #a78bfa;
+            --pi3:       #c4b5fd;
+            --pi-grad:   linear-gradient(135deg, #7c3aed, #a78bfa);
+            --white:     #ffffff;
+            --muted:     rgba(255,255,255,0.45);
+            --border:    rgba(124,58,237,0.18);
+            --radius:    16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+
+        /* ── BACKGROUND ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 10% 20%, rgba(124,58,237,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 90% 80%, rgba(124,58,237,0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(6,8,15,0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-icon {
+            width: 36px; height: 36px;
+            background: var(--pi-grad);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1em; font-weight: 900; font-family: serif;
+        }
+        .nav-title { font-weight: 700; font-size: 0.95em; }
+        .nav-sub { font-size: 0.72em; color: var(--pi2); margin-top: 1px; }
+        .nav-back {
+            margin-left: auto;
+            color: var(--pi2);
+            text-decoration: none;
+            font-size: 0.82em;
+            display: flex; align-items: center; gap: 6px;
+            transition: color 0.2s;
+        }
+        .nav-back:hover { color: var(--white); }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 64px 24px 48px;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(124,58,237,0.15);
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 100px;
+            padding: 6px 16px;
+            font-size: 0.75em;
+            color: var(--pi3);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8em, 5vw, 3em);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+        .hero h1 span { color: var(--pi2); }
+        .hero-meta {
+            color: var(--muted);
+            font-size: 0.82em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+        /* ── CONTAINER ── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+
+        /* ── SECTION ── */
+        .section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .section:hover { border-color: rgba(124,58,237,0.35); }
+
+        .section-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .section-icon {
+            width: 42px; height: 42px; flex-shrink: 0;
+            background: rgba(124,58,237,0.15);
+            border: 1px solid rgba(124,58,237,0.25);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--pi2);
+            font-size: 1em;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15em;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 4px;
+        }
+        .section-num {
+            font-size: 0.72em;
+            color: var(--pi3);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        p { color: rgba(255,255,255,0.72); font-size: 0.9em; margin-bottom: 12px; }
+        p:last-child { margin-bottom: 0; }
+
+        ul {
+            list-style: none;
+            margin: 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        ul li {
+            color: rgba(255,255,255,0.72);
+            font-size: 0.9em;
+            padding-left: 20px;
+            position: relative;
+        }
+        ul li::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 10px;
+            width: 6px; height: 6px;
+            background: var(--pi2);
+            border-radius: 50%;
+        }
+
+        /* ── CONTACT CARD ── */
+        .contact-card {
+            background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(167,139,250,0.06));
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin-bottom: 20px;
+        }
+        .contact-card .section-title { margin-bottom: 16px; }
+        .contact-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .contact-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .contact-icon {
+            width: 36px; height: 36px; flex-shrink: 0;
+            background: rgba(124,58,237,0.2);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--pi2);
+            font-size: 0.85em;
+        }
+        .contact-label { font-size: 0.72em; color: var(--muted); margin-bottom: 2px; }
+        .contact-value { font-size: 0.88em; font-weight: 600; color: var(--white); }
+        .contact-value a { color: var(--pi2); text-decoration: none; }
+        .contact-value a:hover { text-decoration: underline; }
+
+        /* ── FOOTER ── */
+        .footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.78em;
+        }
+        .footer span { color: var(--pi3); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-icon">π</div>
+    <div>
+        <div class="nav-title">Hidayatul Amin Sagatama</div>
+        <div class="nav-sub">Pi Network Payment</div>
+    </div>
+    <a href="/" class="nav-back"><i class="fas fa-arrow-left"></i> Kembali</a>
+</nav>
+
+<div class="hero">
+    <div class="hero-badge">
+        <i class="fas fa-shield-halved"></i> Dokumen Resmi
+    </div>
+    <h1>Kebijakan <span>Privasi</span></h1>
+    <div class="hero-meta">
+        <span><i class="fas fa-calendar"></i> Berlaku sejak: Mei 2025</span>
+        <span><i class="fas fa-rotate"></i> Diperbarui: Mei 2026</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Intro -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-info"></i></div>
+            <div>
+                <div class="section-num">PENDAHULUAN</div>
+                <div class="section-title">Tentang Kebijakan Ini</div>
+            </div>
+        </div>
+        <p>Yayasan Hidayatul Amin Sagatama ("kami") berkomitmen untuk melindungi privasi dan keamanan data pribadi pengguna yang mengakses layanan pembayaran Pi Network kami di <strong style="color:var(--pi2)">https://website-sagatama.vercel.app</strong>.</p>
+        <p>Kebijakan ini menjelaskan data apa yang kami kumpulkan, bagaimana kami menggunakannya, dan hak-hak Anda sebagai pengguna.</p>
+    </div>
+
+    <!-- Data yang dikumpulkan -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-database"></i></div>
+            <div>
+                <div class="section-num">PASAL 1</div>
+                <div class="section-title">Data yang Kami Kumpulkan</div>
+            </div>
+        </div>
+        <p>Saat Anda menggunakan layanan kami melalui Pi Browser, kami mengumpulkan data berikut:</p>
+        <ul>
+            <li>Username Pi Network Anda (diperoleh melalui Pi SDK dengan izin Anda)</li>
+            <li>Wallet address Pi Network Anda (untuk keperluan transaksi)</li>
+            <li>Informasi pembayaran: jumlah Pi, jenis transaksi, dan memo</li>
+            <li>Data formulir yang Anda isi sendiri: nama, nomor WhatsApp, alamat pengiriman, dan pesan</li>
+            <li>Waktu dan tanggal transaksi</li>
+        </ul>
+    </div>
+
+    <!-- Penggunaan data -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-gears"></i></div>
+            <div>
+                <div class="section-num">PASAL 2</div>
+                <div class="section-title">Bagaimana Kami Menggunakan Data</div>
+            </div>
+        </div>
+        <p>Data yang kami kumpulkan digunakan semata-mata untuk:</p>
+        <ul>
+            <li>Memproses dan mengkonfirmasi pembayaran Pi Network Anda</li>
+            <li>Mengirimkan produk atau layanan yang Anda pesan</li>
+            <li>Mencatat riwayat donasi dan transaksi secara transparan</li>
+            <li>Menghubungi Anda terkait status pesanan jika diperlukan</li>
+            <li>Mematuhi kewajiban hukum dan audit internal yayasan</li>
+        </ul>
+        <p>Kami <strong style="color:var(--pi2)">tidak</strong> menjual, menyewakan, atau membagikan data pribadi Anda kepada pihak ketiga untuk tujuan komersial.</p>
+    </div>
+
+    <!-- Pi Network -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-circle-nodes"></i></div>
+            <div>
+                <div class="section-num">PASAL 3</div>
+                <div class="section-title">Integrasi Pi Network</div>
+            </div>
+        </div>
+        <p>Layanan ini menggunakan Pi Network SDK untuk autentikasi dan pembayaran. Dengan mengklik "Hubungkan Pi Account", Anda memberikan izin kepada aplikasi ini untuk mengakses:</p>
+        <ul>
+            <li>Username Pi Network (untuk identifikasi)</li>
+            <li>Akses pembayaran (untuk memproses transaksi)</li>
+            <li>Wallet address (untuk verifikasi transaksi)</li>
+        </ul>
+        <p>Proses autentikasi sepenuhnya dikelola oleh Pi Network. Kami tidak menyimpan password atau kunci privat wallet Anda. Untuk informasi lebih lanjut tentang privasi Pi Network, kunjungi kebijakan resmi Pi Network.</p>
+    </div>
+
+    <!-- Penyimpanan -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-lock"></i></div>
+            <div>
+                <div class="section-num">PASAL 4</div>
+                <div class="section-title">Penyimpanan & Keamanan Data</div>
+            </div>
+        </div>
+        <p>Data transaksi disimpan di Google Firebase Firestore dengan enkripsi standar industri. Kami menerapkan langkah-langkah keamanan teknis dan organisasi yang wajar untuk melindungi data Anda dari akses tidak sah, kehilangan, atau pengungkapan.</p>
+        <ul>
+            <li>Data sesi login disimpan sementara di browser (sessionStorage) dan dihapus saat sesi berakhir</li>
+            <li>Riwayat transaksi disimpan di server Firebase dengan akses terbatas</li>
+            <li>Tidak ada data kartu kredit atau informasi pembayaran konvensional yang disimpan</li>
+        </ul>
+    </div>
+
+    <!-- Hak pengguna -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-user-shield"></i></div>
+            <div>
+                <div class="section-num">PASAL 5</div>
+                <div class="section-title">Hak-Hak Anda</div>
+            </div>
+        </div>
+        <p>Sebagai pengguna, Anda berhak untuk:</p>
+        <ul>
+            <li>Meminta akses ke data pribadi Anda yang kami simpan</li>
+            <li>Meminta koreksi data yang tidak akurat</li>
+            <li>Meminta penghapusan data Anda (dengan batasan kewajiban hukum)</li>
+            <li>Mencabut izin akses Pi Network kapan saja melalui aplikasi Pi</li>
+        </ul>
+        <p>Untuk menggunakan hak-hak di atas, hubungi kami melalui informasi kontak di bawah.</p>
+    </div>
+
+    <!-- Perubahan kebijakan -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon"><i class="fas fa-file-pen"></i></div>
+            <div>
+                <div class="section-num">PASAL 6</div>
+                <div class="section-title">Perubahan Kebijakan</div>
+            </div>
+        </div>
+        <p>Kami dapat memperbarui kebijakan privasi ini sewaktu-waktu. Perubahan akan diberitahukan melalui halaman ini dengan memperbarui tanggal "Diperbarui" di bagian atas. Penggunaan layanan kami setelah perubahan diterbitkan berarti Anda menyetujui kebijakan yang diperbarui.</p>
+    </div>
+
+    <!-- Kontak -->
+    <div class="contact-card">
+        <div class="section-title" style="font-family:'Playfair Display',serif; margin-bottom:16px;">
+            <i class="fas fa-envelope" style="color:var(--pi2); margin-right:8px;"></i>Hubungi Kami
+        </div>
+        <div class="contact-row">
+            <div class="contact-icon"><i class="fas fa-user"></i></div>
+            <div>
+                <div class="contact-label">Penanggungjawab</div>
+                <div class="contact-value">Agus Supriyanto</div>
+            </div>
+        </div>
+        <div class="contact-row">
+            <div class="contact-icon"><i class="fas fa-location-dot"></i></div>
+            <div>
+                <div class="contact-label">Alamat</div>
+                <div class="contact-value">Asahan, Medan, Sumatera Utara</div>
+            </div>
+        </div>
+        <div class="contact-row">
+            <div class="contact-icon"><i class="fab fa-whatsapp"></i></div>
+            <div>
+                <div class="contact-label">WhatsApp</div>
+                <div class="contact-value"><a href="https://wa.me/6285213346061">+62 852-1334-6061</a></div>
+            </div>
+        </div>
+        <div class="contact-row">
+            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+            <div>
+                <div class="contact-label">Email</div>
+                <div class="contact-value"><a href="mailto:agussupriyantosaragih@gmail.com">agussupriyantosaragih@gmail.com</a></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer class="footer">
+    © 2026 <span>Yayasan Hidayatul Amin Sagatama</span> · Semua hak dilindungi · Berbasis Pi Network
+</footer>
+
+</body>
+</html>
