@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/api/payments/approve", "destination": "/api/payments/approve.js" },
+    { "source": "/api/payments/complete", "destination": "/api/payments/complete.js" },
+    { "source": "/api/payments/cancel", "destination": "/api/payments/cancel.js" }
+  ],
+  "redirects": [
+    { "source": "/", "destination": "/pi-payment-testnet.html", "permanent": false }
+  ]
+}
