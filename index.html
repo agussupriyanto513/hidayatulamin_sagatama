@@ -1687,7 +1687,7 @@
         @media (max-width: 768px) {
             nav { height: 64px; }
             .nav-container { padding: 0 14px; gap: 8px; }
-            .logo-icon { width: 38px; height: 38px; font-size: 0.85em; }
+            .logo-icon { width: 38px; height: 38px; font-size: 0.85em; display: flex !important; flex-shrink: 0; }
             .logo-text .name { font-size: 0.75em; }
             .logo-text .tagline { display: none; }
             /* Sembunyikan live visitor di navbar mobile agar tidak sesak */
@@ -2167,7 +2167,7 @@
     <button class="quick-toggle" onclick="toggleQuickMenu()" title="Menu Cepat"><i class="fas fa-bolt"></i></button>
     <div class="quick-links">
         <button class="quick-link-btn" style="background: var(--accent); color: var(--dark);" onclick="scrollToSection('psb')" data-tip="Daftar Santri"><i class="fas fa-user-plus"></i></button>
-        <button class="quick-link-btn" style="background: var(--emerald);" onclick="scrollToSection('donasi')" data-tip="Donasi"><i class="fas fa-hand-holding-heart"></i></button>
+        <button class="quick-link-btn" style="background: var(--pi-color);" onclick="window.location.href='pi-payment.html'" data-tip="Pi Payment"><i class="fas fa-circle-nodes"></i></button>
         <button class="quick-link-btn" style="background: var(--secondary);" onclick="window.open('https://hidayatulamin.vercel.app','_blank')" data-tip="Portal Santri"><i class="fas fa-graduation-cap"></i></button>
         <button class="quick-link-btn" style="background: #0d9488;" onclick="window.open('https://sagatama-mart.vercel.app','_blank')" data-tip="Sagatama Mart"><i class="fas fa-store"></i></button>
         <button class="quick-link-btn" style="background: #d4a017; color: var(--dark);" onclick="toggleQuickMenu(); toggleSGTPanel();" data-tip="Token SGT"><span style="font-family:'Cinzel',serif;font-weight:900;font-size:0.7em;">SGT</span></button>
@@ -2468,7 +2468,7 @@
                     <a href="#warta" onclick="pindahHalaman('home')"><i class="fas fa-rss"></i> Warta Berita Yayasan</a>
                     <a href="#progress" onclick="pindahHalaman('home')"><i class="fas fa-building"></i> Progress Pembangunan</a>
                     <a href="#keuangan" onclick="pindahHalaman('home')"><i class="fas fa-chart-pie"></i> Laporan Keuangan</a>
-                    <a href="#donasi" onclick="pindahHalaman('home')"><i class="fas fa-hand-holding-heart"></i> Donasi & Wakaf</a>
+                    <a href="pi-payment.html"><i class="fas fa-hand-holding-heart"></i> Donasi & Wakaf</a>
                     <a href="#mitra" onclick="pindahHalaman('home')"><i class="fas fa-handshake"></i> Mitra & Donatur</a>
                     <a href="#kontak" onclick="pindahHalaman('home')"><i class="fas fa-phone"></i> Kontak & Lokasi</a>
                 </div>
@@ -2591,7 +2591,7 @@
         <div class="mobile-submenu" id="sub-warta">
             <a href="#warta" onclick="pindahHalaman('home'); closeMobileMenu()"><i class="fas fa-rss" style="width:16px;opacity:0.6;"></i> Warta Berita</a>
             <a href="#progress" onclick="pindahHalaman('home'); closeMobileMenu()"><i class="fas fa-building" style="width:16px;opacity:0.6;"></i> Progress Pembangunan</a>
-            <a href="#donasi" onclick="pindahHalaman('home'); closeMobileMenu()"><i class="fas fa-hand-holding-heart" style="width:16px;opacity:0.6;"></i> Donasi & Wakaf</a>
+            <a href="pi-payment.html"><i class="fas fa-hand-holding-heart" style="width:16px;opacity:0.6;"></i> Donasi & Wakaf</a>
             <a href="#mitra" onclick="pindahHalaman('home'); closeMobileMenu()"><i class="fas fa-handshake" style="width:16px;opacity:0.6;"></i> Mitra & Donatur</a>
             <a href="#kontak" onclick="pindahHalaman('home'); closeMobileMenu()"><i class="fas fa-phone" style="width:16px;opacity:0.6;"></i> Kontak & Lokasi</a>
         </div>
@@ -2636,9 +2636,9 @@
             <i class="fas fa-user-plus"></i>
             <span>Daftar</span>
         </a>
-        <a class="bnav-item" href="#donasi" onclick="pindahHalaman('home')" title="Donasi">
-            <i class="fas fa-hand-holding-heart"></i>
-            <span>Donasi</span>
+        <a class="bnav-item" href="pi-payment.html" title="Pi Payment">
+            <i class="fas fa-circle-nodes" style="color:#a78bfa;"></i>
+            <span>Pi Payment</span>
         </a>
         <button class="bnav-item sgt-btn" onclick="openSGTWallet()" title="SGT Wallet">
             <span style="font-family:'Cinzel',serif;font-weight:900;font-size:0.85em;">SGT</span>
@@ -4343,7 +4343,7 @@
                 <li><a href="#pengantar" onclick="pindahHalaman('home')">Kata Pengantar</a></li>
                 <li><a href="#visi-misi" onclick="pindahHalaman('home')">Visi & Misi</a></li>
                 <li><a href="#psb" onclick="pindahHalaman('home')">Daftar Santri</a></li>
-                <li><a href="#donasi" onclick="pindahHalaman('home')">Donasi & Wakaf</a></li>
+                <li><a href="pi-payment.html">Donasi & Wakaf</a></li>
                 <li><a onclick="pindahHalaman('market')">Sagatama Mart</a></li>
             </ul>
         </div>
