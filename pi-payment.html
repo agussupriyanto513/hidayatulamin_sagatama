@@ -874,30 +874,66 @@ async function doPayment() {
         const payment = await Pi.createPayment(paymentData, {
             onReadyForServerApproval: function(paymentId) {
                 dbg('💳 onReadyForServerApproval: ' + paymentId, '#c4b5fd');
+                // Simpan ke Firestore
                 db.collection('pi_payments').doc(paymentId).set({
-                    paymentId: paymentId,
-                    amount:    amount,
-                    memo:      memo,
-                    metadata:  metadata,
+                    paymentId:  paymentId,
+                    amount:     amount,
+                    memo:       memo,
+                    metadata:   metadata,
                     piUsername: _piUser ? (_piUser.username || _piUser.uid) : 'unknown',
-                    status:    'pending_approval',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    status:     'pending_approval',
+                    createdAt:  firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(function(e) { dbg('Firestore set error: ' + e.message, '#fca5a5'); });
-                // NOTE: Approval harus dilakukan via backend server
-                // POST https://api.minepi.com/v2/payments/{id}/approve (dengan server API key)
-                dbg('⚠️ Butuh backend server untuk approve payment ini', '#fbbf24');
+
+                // Panggil backend untuk approve
+                dbg('🔄 Memanggil /api/payments/approve...', '#c4b5fd');
+                fetch('/api/payments/approve', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ paymentId: paymentId, metadata: metadata })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        dbg('✅ Approve OK — amount: ' + data.amount + ' Pi', '#6ee7b7');
+                        db.collection('pi_payments').doc(paymentId).update({ status: 'approved' }).catch(function(){});
+                    } else {
+                        dbg('❌ Approve gagal: ' + (data.error || 'unknown'), '#fca5a5');
+                    }
+                })
+                .catch(function(e) {
+                    dbg('❌ Approve error: ' + e.message, '#fca5a5');
+                });
             },
 
             onReadyForServerCompletion: function(paymentId, txid) {
                 dbg('✅ onReadyForServerCompletion: ' + paymentId + ' | txid: ' + txid, '#6ee7b7');
+                // Simpan txid ke Firestore
                 db.collection('pi_payments').doc(paymentId).set({
-                    txid:      txid,
-                    status:    'pending_completion',
-                    txAt:      firebase.firestore.FieldValue.serverTimestamp()
+                    txid:   txid,
+                    status: 'pending_completion',
+                    txAt:   firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true }).catch(function(e) { dbg('Firestore update error: ' + e.message, '#fca5a5'); });
-                // NOTE: Completion harus dilakukan via backend server
-                // POST https://api.minepi.com/v2/payments/{id}/complete (dengan server API key)
-                dbg('⚠️ Butuh backend server untuk complete payment ini', '#fbbf24');
+
+                // Panggil backend untuk complete
+                dbg('🔄 Memanggil /api/payments/complete...', '#c4b5fd');
+                fetch('/api/payments/complete', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ paymentId: paymentId, txid: txid })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        dbg('✅ Complete OK — txid: ' + txid, '#6ee7b7');
+                        db.collection('pi_payments').doc(paymentId).update({ status: 'completed' }).catch(function(){});
+                    } else {
+                        dbg('❌ Complete gagal: ' + (data.error || 'unknown'), '#fca5a5');
+                    }
+                })
+                .catch(function(e) {
+                    dbg('❌ Complete error: ' + e.message, '#fca5a5');
+                });
             },
 
             onCancel: function(paymentId) {
@@ -942,6 +978,8 @@ async function doPayment() {
 function onIncompletePaymentFound(payment) {
     dbg('⚠️ Incomplete payment: ' + (payment && payment.identifier ? payment.identifier : 'unknown'), '#fbbf24');
     if (!payment || !payment.identifier) return;
+
+    // Simpan ke Firestore
     db.collection('pi_incomplete_payments').doc(payment.identifier).set({
         paymentId:  payment.identifier,
         amount:     payment.amount || 0,
@@ -951,6 +989,25 @@ function onIncompletePaymentFound(payment) {
         reportedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true }).catch(function(e) {
         dbg('Firestore incomplete save error: ' + e.message, '#fca5a5');
+    });
+
+    // Panggil backend untuk handle incomplete payment
+    dbg('🔄 Memanggil /api/payments/incomplete...', '#fbbf24');
+    fetch('/api/payments/incomplete', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ paymentId: payment.identifier })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            dbg('✅ Incomplete handled — action: ' + data.action, '#6ee7b7');
+        } else {
+            dbg('❌ Incomplete handle gagal: ' + (data.error || 'unknown'), '#fca5a5');
+        }
+    })
+    .catch(function(e) {
+        dbg('❌ Incomplete error: ' + e.message, '#fca5a5');
     });
 }
 
