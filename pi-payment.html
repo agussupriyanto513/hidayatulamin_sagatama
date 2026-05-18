@@ -17,18 +17,28 @@
     <!-- Pi Network SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        window._piSdkLoaded = (typeof Pi !== 'undefined');
+        // Tandai false dulu — init yang sebenarnya di DOMContentLoaded
+        window._piSdkLoaded = false;
         window._piInitOk    = false;
         window._piInitErr   = null;
-        if (window._piSdkLoaded) {
-            try {
-                Pi.init({ version: "2.0", sandbox: false });
-                window._piInitOk = true;
-            } catch(e) {
-                window._piInitErr = e.message;
-                console.warn('[Pi SDK init]', e.message);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Pi !== 'undefined') {
+                window._piSdkLoaded = true;
+                try {
+                    Pi.init({ version: "2.0", sandbox: false });
+                    window._piInitOk = true;
+                    console.log('[Pi SDK] Init OK — mainnet');
+                } catch(e) {
+                    window._piInitErr = e.message;
+                    console.warn('[Pi SDK init]', e.message);
+                }
+            } else {
+                console.warn('[Pi SDK] window.Pi tidak ditemukan — bukan Pi Browser');
             }
-        }
+            // Panggil init UI setelah SDK siap
+            _initPiUI();
+        });
     </script>
 
     <style>
@@ -560,8 +570,9 @@ function dbg(msg, color) {
 
 // ─────────────────────────────────────────────────────────
 //  INIT — cek Pi Browser & status SDK
+//  Dipanggil dari DOMContentLoaded setelah Pi.init() selesai
 // ─────────────────────────────────────────────────────────
-(function init() {
+function _initPiUI() {
     var sdkLoaded = window._piSdkLoaded;
     var initOk    = window._piInitOk;
     var initErr   = window._piInitErr;
@@ -593,7 +604,7 @@ function dbg(msg, color) {
 
     document.getElementById('auth-card').classList.add('show');
     dbg('✅ Pi Browser terdeteksi — siap login', '#6ee7b7');
-})();
+}
 
 // ─────────────────────────────────────────────────────────
 //  TAMPILKAN USER BAR
